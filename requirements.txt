@@ -1,0 +1,6 @@
+# No external dependencies — uses Python standard library only!
+# Python 3.10+ recommended
+
+# Optional future enhancements:
+# requests==2.31.0   # For HaveIBeenPwned API integration
+# colorama==0.4.6    # Cross-platform color support on Windows

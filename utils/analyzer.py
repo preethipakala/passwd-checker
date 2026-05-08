@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-analyzer.py — Core password scoring and analysis logic.
-"""
+"""analyzer.py — Core password scoring and analysis logic.""
 
 import re
 import math
@@ -10,15 +8,11 @@ from utils.wordlist import is_common_password
 
 
 def calculate_entropy(password: str) -> float:
-    """
-    Estimate password entropy in bits.
-    Entropy = length * log2(character_pool_size)
-    Higher entropy = harder to crack.
-    """
+    """Estimate password entropy in bits."
     pool = 0
     if re.search(r"[a-z]", password): pool += 26
     if re.search(r"[A-Z]", password): pool += 26
-    if re.search(r"\d", password):    pool += 10
+    if re.search(r"\d", password): pool += 10
     if re.search(r"[^a-zA-Z0-9]", password): pool += 32
     if pool == 0:
         return 0.0
@@ -26,9 +20,7 @@ def calculate_entropy(password: str) -> float:
 
 
 def estimate_crack_time(entropy: float) -> str:
-    """
-    Rough estimate of brute-force crack time at 1 billion guesses/second.
-    """
+    """Rough estimate of brute-force crack time."
     seconds = (2 ** entropy) / 1_000_000_000
     if seconds < 1:
         return "instantly"
@@ -47,10 +39,7 @@ def estimate_crack_time(entropy: float) -> str:
 
 
 def score_password(password: str) -> tuple[int, list[str], list[str]]:
-    """
-    Score a password from 0-100.
-    Returns (score, passed_checks, failed_checks).
-    """
+    """Score a password from 0-100."
     score = 0
     passed = []
     failed = []
@@ -71,81 +60,29 @@ def score_password(password: str) -> tuple[int, list[str], list[str]]:
     # --- Character variety ---
     if re.search(r"[A-Z]", password):
         score += 10
-        passed.append("Contains uppercase letters (+10)")
-    else:
-        failed.append("Add uppercase letters (A-Z)")
-
+        passed.append("Uppercase letters (+10)")
     if re.search(r"[a-z]", password):
         score += 10
-        passed.append("Contains lowercase letters (+10)")
-    else:
-        failed.append("Add lowercase letters (a-z)")
-
+        passed.append("Lowercase letters (+10)")
     if re.search(r"\d", password):
         score += 10
-        passed.append("Contains digits (+10)")
-    else:
-        failed.append("Add at least one digit (0-9)")
-
+        passed.append("Digits (+10)")
     if re.search(r"[^a-zA-Z0-9]", password):
         score += 15
-        passed.append("Contains special characters (+15)")
-    else:
-        failed.append("Add special characters (!@#$%^&*)")
+        passed.append("Special characters (+15)")
 
-    # --- Common password check ---
-    if is_common_password(password):
-        failed.append("This is a very common password — change it!")
-    else:
+    # --- Common passwords ---
+    if not is_common_password(password):
         score += 20
-        passed.append("Not a common/leaked password (+20)")
+        passed.append("Not a common password (+20)")
 
-    # --- Pattern checks ---
-    if has_repeated_chars(password):
-        failed.append("Avoid repeated characters (e.g. 'aaa', '111')")
-    else:
+    # --- Repeated patterns ---
+    if not has_repeated_chars(password):
         score += 5
-        passed.append("No repeated character sequences (+5)")
-
-    if has_keyboard_pattern(password):
-        failed.append("Avoid keyboard patterns (e.g. 'qwerty', '12345')")
-    else:
+        passed.append("No repeated characters (+5)")
+    if not has_keyboard_pattern(password):
         score += 5
-        passed.append("No keyboard walk patterns (+5)")
+        passed.append("No keyboard pattern (+5)")
 
     return min(score, 100), passed, failed
 
-
-def get_grade(score: int) -> str:
-    if score >= 80: return "A"
-    if score >= 60: return "B"
-    if score >= 40: return "C"
-    if score >= 20: return "D"
-    return "F"
-
-
-def get_label(score: int) -> str:
-    if score >= 80: return "Very Strong"
-    if score >= 60: return "Strong"
-    if score >= 40: return "Moderate"
-    if score >= 20: return "Weak"
-    return "Very Weak"
-
-
-def analyze_password(password: str) -> dict:
-    """
-    Full analysis of a password. Returns a result dictionary.
-    """
-    score, passed, failed = score_password(password)
-    entropy = calculate_entropy(password)
-    return {
-        "password": password,
-        "score": score,
-        "grade": get_grade(score),
-        "label": get_label(score),
-        "entropy": round(entropy, 1),
-        "crack_time": estimate_crack_time(entropy),
-        "passed": passed,
-        "failed": failed,
-        "length": len(password),
-    }
